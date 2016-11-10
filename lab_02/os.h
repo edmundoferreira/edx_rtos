@@ -34,6 +34,16 @@ struct tcb{
 };
 typedef struct tcb tcbType;
 
+#define NUMEVENTTHREADS 2
+
+struct teb{
+	int32_t period;
+	void(*thread)(void);
+};
+typedef struct teb tebType;
+	
+
+
 // ******** OS_Init ************
 // Initialize operating system, disable interrupts
 // Initialize OS controlled I/O: systick, bus clock as fast as possible
