@@ -131,9 +131,11 @@ int OS_AddPeriodicEventThreads(void(*thread1)(void), uint32_t period1, void(*thr
 	//added event threads to a vector of function pointers and periods
 	tebs[0].period = period1;
 	tebs[0].thread = thread1;
+	tebs[0].counter = 0;
 	tebs[1].period = period2;
 	tebs[1].thread = thread2;
-		
+	tebs[1].counter = 0;
+	
   return 1;
 }
 
@@ -157,11 +159,11 @@ void Scheduler(void){ // every time slice
   
 	//***YOU IMPLEMENT THIS FUNCTION*****
 	//scheduling of event threads
-	tebs[0].thread(); 
-	//executing every thick
-	if(++SchedCounter == tebs[1].period){
-		tebs[1].thread();
-		SchedCounter = 0;
+	for(int16_t i=0; i<NUMEVENTTHREADS; i++){
+		if(++tebs[i].counter == tebs[i].period){
+				tebs[i].thread(); //excute
+				tebs[i].counter = 0; //reset counter
+		}
 	}
 	
 	RunPt = RunPt->next;	//using Round Robin scheduler
@@ -187,7 +189,7 @@ void OS_InitSemaphore(int32_t *semaPt, int32_t value){
 // Outputs: none
 void OS_Wait(int32_t *semaPt){
 	//***YOU IMPLEMENT THIS FUNCTION*****
-	 DisableInterrupts();
+	DisableInterrupts();
   while((*semaPt) == 0){
     EnableInterrupts(); // interrupts can occur here
     DisableInterrupts();
@@ -204,7 +206,7 @@ void OS_Wait(int32_t *semaPt){
 // Outputs: none
 void OS_Signal(int32_t *semaPt){
 	//***YOU IMPLEMENT THIS FUNCTION*****
-	 DisableInterrupts();
+	DisableInterrupts();
   (*semaPt) = (*semaPt) + 1;
   EnableInterrupts();
 }

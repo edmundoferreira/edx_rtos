@@ -38,6 +38,7 @@ typedef struct tcb tcbType;
 
 struct teb{
 	int32_t period;
+	int32_t counter;
 	void(*thread)(void);
 };
 typedef struct teb tebType;
