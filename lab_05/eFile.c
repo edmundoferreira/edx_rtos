@@ -4,6 +4,7 @@
 // Daniel and Jonathan Valvano
 // August 29, 2016
 #include <stdint.h>
+#include <string.h>
 #include "eDisk.h"
 
 uint8_t Buff[512]; // temporary buffer used during file I/O
@@ -26,9 +27,15 @@ void MountDirectory(void){
 //    set bDirectoryLoaded=1
 // if bDirectoryLoaded is 1, simply return
 // **write this function**
-
-  
+	if(bDirectoryLoaded == 0){
+		eDisk_ReadSector(Buff, 255); //read sector zero
+		
+		memcpy(Directory, Buff, 256); //fill Directory
+		memcpy(FAT, &Buff[256], 256); //fill FAT
+		bDirectoryLoaded = 1;
+	};
 	
+	return;
 }
 
 // Return the index of the last sector in the file
@@ -37,9 +44,17 @@ void MountDirectory(void){
 // if the file has no end (i.e. the FAT is corrupted).
 uint8_t lastsector(uint8_t start){
 // **write this function**
-  
+  if(start == 255)
+		return 255;
+
+	uint8_t m = FAT[start];;
 	
-  return 0; // replace this line
+	while(m!=255){
+		start = m;
+		m= FAT[start];
+	}
+	
+	return start;
 }
 
 // Return the index of the first free sector.
@@ -48,8 +63,17 @@ uint8_t lastsector(uint8_t start){
 // (i.e. the FAT is corrupted).
 uint8_t findfreesector(void){
 // **write this function**
+	int8_t fs = -1;
+	uint8_t i = 0;
+	uint8_t	ls = lastsector(Directory[i]);
+
+	while(ls!=255){
+		fs = max(fs,ls);
+		i++;
+		ls = lastsector(Directory[i]);
+	}
   
-  return 0; // replace this line
+  return fs+1;
 }
 
 // Append a sector index 'n' at the end of file 'num'.
@@ -60,7 +84,18 @@ uint8_t findfreesector(void){
 // if the file has no end (i.e. the FAT is corrupted).
 uint8_t appendfat(uint8_t num, uint8_t n){
 // **write this function**
-  
+	uint8_t i = Directory[num];
+	
+	if(i!=255){
+		uint8_t m= FAT[i];
+		while(m!=255){
+			i=m;
+			m=FAT[i];
+		}
+		FAT[i] =n;
+	}else{
+		Directory[num] = n;
+	}
 	
   return 0; // replace this line
 }
@@ -73,7 +108,14 @@ uint8_t appendfat(uint8_t num, uint8_t n){
 uint8_t OS_File_New(void){
 // **write this function**
   
+	MountDirectory(); // bring Dir and FAT from ROM to RAM if needed
 	
+	for(uint16_t i=0; i<=255; i++){
+		if(Directory[i]==255){
+			return i;
+		}
+	}
+
   return 255;
 }
 
@@ -84,9 +126,18 @@ uint8_t OS_File_New(void){
 // Errors:  none
 uint8_t OS_File_Size(uint8_t num){
 // **write this function**
-  
+  uint8_t n = Directory[num];
+	uint8_t m = FAT[n];
+	int16_t counter = 0;
 	
-  return 0; // replace this line
+	while(m!=255){
+		m = FAT[m];
+		counter++;
+	}
+	if(counter==0)
+		return counter;
+	else
+		return counter+1; // replace this line
 }
 
 //********OS_File_Append*************
@@ -98,7 +149,18 @@ uint8_t OS_File_Size(uint8_t num){
 uint8_t OS_File_Append(uint8_t num, uint8_t buf[512]){
 // **write this function**
   
-  return 0; // replace this line
+	MountDirectory(); // bring Dir and FAT from ROM to RAM if needed
+	
+	uint8_t n = findfreesector();
+	
+	if(n!=255){
+		eDisk_WriteSector(buf,n);
+		appendfat(num, n);
+		return 0;
+	}else{
+		return 255;
+	}
+	
 }
 
 //********OS_File_Read*************
@@ -111,8 +173,20 @@ uint8_t OS_File_Append(uint8_t num, uint8_t buf[512]){
 uint8_t OS_File_Read(uint8_t num, uint8_t location,
                      uint8_t buf[512]){
 // **write this function**
-  
-  return 0; // replace this line
+	uint8_t n = Directory[num];
+	uint8_t m = n;
+	int16_t counter = 0;
+	
+	while(m!=255 || counter==0){
+		if(counter == location){
+			eDisk_ReadSector(buf, m);
+			return 0;
+		}
+		m = FAT[m];
+		counter++;
+	}
+			
+  return 255;
 }
 
 //********OS_File_Flush*************
@@ -124,7 +198,13 @@ uint8_t OS_File_Read(uint8_t num, uint8_t location,
 uint8_t OS_File_Flush(void){
 // **write this function**
 
-  return 0; // replace this line
+	memcpy(Buff, Directory, 256); //dump Directory
+	memcpy(&Buff[256], FAT, 256); //dump FAT
+
+	if(eDisk_WriteSector(Buff, 255) == 0) //write sector zero
+		return 0;
+	else
+		return 255;
 }
 
 //********OS_File_Format*************
@@ -136,6 +216,15 @@ uint8_t OS_File_Format(void){
 // call eDiskFormat
 // clear bDirectoryLoaded to zero
 // **write this function**
+	eDisk_Format();
+	
+	//clear Directory and FAT
+	for(uint16_t i=0; i<=255; i++){
+		Directory[i] = 255;
+		FAT[i] = 255;
+	}
+	
+	bDirectoryLoaded = 0;
 
   return 0; // replace this line
 }

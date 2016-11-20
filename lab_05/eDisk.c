@@ -32,6 +32,7 @@
  http://users.ece.utexas.edu/~valvano/
  */
 
+#include <string.h>
 #include <stdint.h>
 #include "eDisk.h"
 #include "FlashProgram.h"
@@ -71,8 +72,11 @@ enum DRESULT eDisk_ReadSector(
 // return RES_PARERR if EDISK_ADDR_MIN + 512*sector > EDISK_ADDR_MAX
 // copy 512 bytes from ROM (disk) into RAM (buff)
 // **write this function**
- 
-			
+	if(EDISK_ADDR_MIN + 512*sector > EDISK_ADDR_MAX)
+			return RES_PARERR;
+
+	memcpy(buff,(uint8_t *)(EDISK_ADDR_MIN + 512*sector),512);
+
   return RES_OK;
 }
 
@@ -94,9 +98,13 @@ enum DRESULT eDisk_WriteSector(
 // write 512 bytes from RAM (buff) into ROM (disk)
 // you can use Flash_FastWrite or Flash_WriteArray
 // **write this function**
-  
-			
-  return RES_OK;
+	if(EDISK_ADDR_MIN + 512*sector > EDISK_ADDR_MAX)
+			return RES_PARERR;
+	
+  if(Flash_WriteArray((uint32_t*)buff ,EDISK_ADDR_MIN+512*sector ,128) == 128) //512bytes/sector => count of 16 (512/32=16)	
+		return RES_OK;
+	else
+		return RES_ERROR;
 }
 
 //*************** eDisk_Format ***********
@@ -112,7 +120,10 @@ enum DRESULT eDisk_Format(void){
 // erase all flash from EDISK_ADDR_MIN to EDISK_ADDR_MAX
 // **write this function**
   
-	
-	
+	for(uint32_t addr = EDISK_ADDR_MIN; addr<=EDISK_ADDR_MAX; addr=addr+1024){
+		if(Flash_Erase(addr) == ERROR){
+			return RES_ERROR;
+		}
+	}
   return RES_OK;
 }
