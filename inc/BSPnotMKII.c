@@ -61,14 +61,15 @@
 // many solid wires
 
 // Daniel and Jonathan Valvano
-// September 20, 2016
+// September 22, 2016
 
 /* This example accompanies the books
+   "Embedded Systems: Introduction to ARM Cortex M Microcontrollers",
+      ISBN: 978-1469998749, Jonathan Valvano, copyright (c) 2016
    "Embedded Systems: Real Time Interfacing to ARM Cortex M Microcontrollers",
-   ISBN: 978-1463590154, Jonathan Valvano, copyright (c) 2016
-
+      ISBN: 978-1463590154, Jonathan Valvano, copyright (c) 2016
    "Embedded Systems: Real-Time Operating Systems for ARM Cortex-M Microcontrollers",
-   ISBN: 978-1466468863, , Jonathan Valvano, copyright (c) 2016
+      ISBN: 978-1466468863, , Jonathan Valvano, copyright (c) 2016
 
  Copyright 2016 by Jonathan W. Valvano, valvano@mail.utexas.edu
     You may use, edit, run or distribute this file
@@ -81,6 +82,7 @@
  For more information about my classes, my research, and my books, see
  http://users.ece.utexas.edu/~valvano/
  */
+
 
 //  J1   J3               J4   J2
 // [ 1] [21]             [40] [20]
@@ -1216,7 +1218,7 @@ static const uint8_t
       0xC8,                   //     row addr/col addr, bottom to top refresh
     ST7735_COLMOD , 1      ,  // 15: set color mode, 1 arg, no delay:
       0x05 };                 //     16-bit color
-static const uint8_t
+ const uint8_t
   Rcmd2green[] = {            // Init for 7735R, part 2 (green tab only)
     2,                        //  2 commands in list:
     ST7735_CASET  , 4      ,  //  1: Column addr set, 4 args, no delay:
@@ -1225,7 +1227,7 @@ static const uint8_t
     ST7735_RASET  , 4      ,  //  2: Row addr set, 4 args, no delay:
       0x00, 0x01,             //     XSTART = 0
       0x00, 0x7F+0x01 };      //     XEND = 127
-static const uint8_t
+ const uint8_t
   Rcmd2red[] = {              // Init for 7735R, part 2 (red tab only)
     2,                        //  2 commands in list:
     ST7735_CASET  , 4      ,  //  1: Column addr set, 4 args, no delay:
@@ -1234,7 +1236,7 @@ static const uint8_t
     ST7735_RASET  , 4      ,  //  2: Row addr set, 4 args, no delay:
       0x00, 0x00,             //     XSTART = 0
       0x00, 0x7F };           //     XEND = 127
-static const uint8_t
+ const uint8_t
   Rcmd3[] = {                 // Init for 7735R, part 3 (red or green tab)
     4,                        //  4 commands in list:
     ST7735_GMCTRP1, 16      , //  1: Magical unicorn dust, 16 args, no delay:
@@ -1423,7 +1425,7 @@ void static ST7735_InitR(enum initRFlags option) {
 // Output: none
 void BSP_LCD_Init(void){
   ST7735_InitR(INITR_GREENTAB);
-  UART0_OutString("/n/r**Simulated BSP hardware**/n/r");
+  BSP_UART0_OutString("\n\r**Simulated BSP hardware**\n\r");
 
 }
 
@@ -2393,6 +2395,7 @@ void BSP_PeriodicTask_StopC(void){
 // Assumes: BSP_Clock_InitFastest() has been called
 //          so clock = 80/80 = 1 MHz
 void BSP_Time_Init(void){long sr;
+  sr = StartCritical();
   // ***************** Wide Timer5B initialization *****************
   SYSCTL_RCGCWTIMER_R |= 0x20;     // activate clock for Wide Timer5
   while((SYSCTL_PRWTIMER_R&0x20) == 0){};// allow time for clock to stabilize

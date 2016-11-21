@@ -10,11 +10,12 @@
 // June 8, 2016
 
 /* This example accompanies the books
+   "Embedded Systems: Introduction to ARM Cortex M Microcontrollers",
+      ISBN: 978-1469998749, Jonathan Valvano, copyright (c) 2016
    "Embedded Systems: Real Time Interfacing to ARM Cortex M Microcontrollers",
-   ISBN: 978-1463590154, Jonathan Valvano, copyright (c) 2016
-
+      ISBN: 978-1463590154, Jonathan Valvano, copyright (c) 2016
    "Embedded Systems: Real-Time Operating Systems for ARM Cortex-M Microcontrollers",
-   ISBN: 978-1466468863, , Jonathan Valvano, copyright (c) 2016
+      ISBN: 978-1466468863, , Jonathan Valvano, copyright (c) 2016
 
  Copyright 2016 by Jonathan W. Valvano, valvano@mail.utexas.edu
     You may use, edit, run or distribute this file
@@ -335,7 +336,7 @@ void BSP_RGB_Init(uint16_t red, uint16_t green, uint16_t blue){
   // ***************** Timer3B initialization *****************
   SYSCTL_RCGCTIMER_R |= 0x08;      // activate clock for Timer3
   SYSCTL_RCGCGPIO_R |= 0x0002;     // activate clock for Port B
-  while((SYSCTL_PRGPIO_R&0x02) == 0){};// allow time for clock to stabilize
+  while((SYSCTL_PRGPIO_R&0x02) == 0){};// wait for clock to stabilize
   GPIO_PORTB_AFSEL_R |= 0x08;      // enable alt funct on PB3
   GPIO_PORTB_DEN_R |= 0x08;        // enable digital I/O on PB3
                                    // configure PB3 as T3CCP1
@@ -2252,6 +2253,7 @@ void BSP_PeriodicTask_StopC(void){
 // Assumes: BSP_Clock_InitFastest() has been called
 //          so clock = 80/80 = 1 MHz
 void BSP_Time_Init(void){long sr;
+  sr = StartCritical();
   // ***************** Wide Timer5B initialization *****************
   SYSCTL_RCGCWTIMER_R |= 0x20;     // activate clock for Wide Timer5
   while((SYSCTL_PRWTIMER_R&0x20) == 0){};// allow time for clock to stabilize

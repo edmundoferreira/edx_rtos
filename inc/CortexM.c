@@ -1,7 +1,7 @@
-// CortexM.h
-// Cortex M registers used in these labs
+// CortexM.c
+// Cortex M registers and basic functions used in these labs
 // Daniel and Jonathan Valvano
-// February 7, 2016
+// September 18, 2016
 
 /* This example accompanies the books
    "Embedded Systems: Introduction to ARM Cortex M Microcontrollers",
@@ -23,47 +23,36 @@
  http://users.ece.utexas.edu/~valvano/
  */
 
-
-#define STCTRL          (*((volatile uint32_t *)0xE000E010))
-#define STRELOAD        (*((volatile uint32_t *)0xE000E014))
-#define STCURRENT       (*((volatile uint32_t *)0xE000E018))
-#define INTCTRL         (*((volatile uint32_t *)0xE000ED04))
-#define SYSPRI1         (*((volatile uint32_t *)0xE000ED18))
-#define SYSPRI2         (*((volatile uint32_t *)0xE000ED1C))
-#define SYSPRI3         (*((volatile uint32_t *)0xE000ED20))
-#define SYSHNDCTRL      (*((volatile uint32_t *)0xE000ED24))
-#define FAULTSTAT       (*((volatile uint32_t *)0xE000ED28))
-#define HFAULTSTAT      (*((volatile uint32_t *)0xE000ED2C))
-#define MMADDR          (*((volatile uint32_t *)0xE000ED34))
-#define FAULTADDR       (*((volatile uint32_t *)0xE000ED38))
-
-// these functions are defined in the startup file
+#include <stdint.h>
 
 //******DisableInterrupts************
 // sets the I bit in the PRIMASK to disable interrupts
 // Inputs: none
 // Outputs: none
-void DisableInterrupts(void); // Disable interrupts
+// implemented in startup_TM4C123.s
 
 //******EnableInterrupts************
 // clears the I bit in the PRIMASK to enable interrupts
 // Inputs: none
 // Outputs: none
-void EnableInterrupts(void);  // Enable interrupts
+// implemented in startup_TM4C123.s
+
 
 //******StartCritical************
 // StartCritical saves a copy of PRIMASK and disables interrupts
 // Code between StartCritical and EndCritical is run atomically
 // Inputs: none
 // Outputs: copy of the PRIMASK (I bit) before StartCritical called
-long StartCritical(void);    
+// implemented in startup_TM4C123.s
+
 
 //******EndCritical************
 // EndCritical sets PRIMASK with value passed in
 // Code between StartCritical and EndCritical is run atomically
 // Inputs: PRIMASK (I bit) before StartCritical called
 // Outputs: none
-void EndCritical(long sr);    // restore I bit to previous value
+// implemented in startup_TM4C123.s
+
 
 //******WaitForInterrupt************
 // enters low power sleep mode waiting for interrupt (WFI instruction)
@@ -71,10 +60,39 @@ void EndCritical(long sr);    // restore I bit to previous value
 // returns after ISR has been run
 // Inputs: none
 // Outputs: none
-void WaitForInterrupt(void);  
+// implemented in startup_TM4C123.s
 
+
+
+// delay function
+// which delays 3.3*ulCount cycles
+// ulCount=23746 => 1ms = 23746*3.3cycle/loop/80,000
+#ifdef __TI_COMPILER_VERSION__
+  //Code Composer Studio Code
+  void delay(unsigned long ulCount){
+  __asm (  "pdloop:  subs    r0, #1\n"
+      "    bne    pdloop\n");
+}
+
+#else
+  //Keil uVision Code
+  __asm void
+  delay(unsigned long ulCount)
+  {
+    subs    r0, #1
+    bne     delay
+    bx      lr
+  }
+
+#endif
+  
 // ------------Clock_Delay1ms------------
 // Simple delay function which delays about n milliseconds.
 // Inputs: n, number of msec to wait
 // Outputs: none
-void Clock_Delay1ms(uint32_t n);
+void Clock_Delay1ms(uint32_t n){
+  while(n){
+    delay(23746);  // 1 msec, tuned at 80 MHz, originally part of LCD module
+    n--;
+  }
+}
